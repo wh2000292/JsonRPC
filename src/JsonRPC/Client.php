@@ -103,6 +103,14 @@ class Client
         'Accept: application/json',
         'Connection: close',
     );
+    
+    /**
+     * Cookies
+     * 
+     * @access private
+     * @var array
+     */
+    private $cookies = array();
 
     /**
      * SSL certificates verification
@@ -340,6 +348,23 @@ class Client
         }
 
         $metadata = stream_get_meta_data($stream);
+        
+        // Parse received cookies
+        $response_headers = $metadata['wrapper_data'];
+        foreach($response_headers as $response_header){
+            $pos = stripos($response_header, 'Set-Cookie:');
+            if ($pos === false) continue;
+            $cookie_defitions = explode(';', substr($response_header, $pos+11));
+            foreach($cookie_defitions as $cookie_defition){
+                $cookie_defition_array = explode('=', $cookie_defition);
+                if (count($cookie_defition_array) == 2){
+                    $cookie_name = trim($cookie_defition_array[0]);
+                    $cookie_value = $cookie_defition_array[1];
+                    $this->cookies[$cookie_name] = $cookie_value;
+                }
+            }
+        }
+        
         $response = json_decode(stream_get_contents($stream), true);
 
         if ($this->debug) {
@@ -365,6 +390,15 @@ class Client
 
         if (! empty($this->username) && ! empty($this->password)) {
             $headers[] = 'Authorization: Basic '.base64_encode($this->username.':'.$this->password);
+        }
+        
+        if (count($this->cookies)){
+            $cookie_definitions = array();
+            foreach($this->cookies as $cookie_name=>$cookie_value){
+                $cookie_definitions[] = $cookie_name.'='.$cookie_value;
+            }
+            $headers[] = 'Cookie: '.implode('; ', $cookie_definitions) ;
+            
         }
 
         return stream_context_create(array(
@@ -410,5 +444,32 @@ class Client
         }
 
         return isset($payload['result']) ? $payload['result'] : null;
+    }
+    
+    /**
+     * Return cookies set
+     *
+     * @access public
+     * @return array
+     */
+    public function getCookies()
+    {
+        return $this->cookies;
+    }
+    
+    /**
+     * Set cookies
+     *
+     * @access public
+     * @param array   $cookies
+     * @param boolean   $replace
+     */
+    public function setCookies(array $cookies, $replace=false)
+    {
+        if ($replace) {
+            $this->cookies = $cookies;
+        }else{
+            $this->cookies = array_merge($this->cookies, $cookies);
+        }
     }
 }
