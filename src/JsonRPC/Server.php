@@ -9,11 +9,6 @@ use InvalidArgumentException;
 use ReflectionFunction;
 use ReflectionMethod;
 
-class InvalidJsonRpcFormat extends Exception {};
-class InvalidJsonFormat extends Exception {};
-class AuthenticationFailure extends Exception {};
-class ResponseEncodingFailure extends Exception {};
-
 /**
  * JsonRPC server class
  *

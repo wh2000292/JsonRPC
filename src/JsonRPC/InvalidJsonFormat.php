@@ -5,11 +5,11 @@ namespace JsonRPC;
 use Exception;
 
 /**
- * Class AccessDeniedException
+ * Class InvalidJsonFormat
  *
  * @package JsonRPC
  * @author  Frederic Guillot
  */
-class AccessDeniedException extends Exception
+class InvalidJsonFormat extends Exception
 {
 }

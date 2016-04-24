@@ -7,9 +7,6 @@ use BadFunctionCallException;
 use InvalidArgumentException;
 use RuntimeException;
 
-class ConnectionFailureException extends Exception {};
-class ServerErrorException extends Exception {};
-
 /**
  * JsonRPC client class
  *
@@ -103,10 +100,10 @@ class Client
         'Accept: application/json',
         'Connection: close',
     );
-    
+
     /**
      * Cookies
-     * 
+     *
      * @access private
      * @var array
      */
@@ -348,7 +345,7 @@ class Client
         }
 
         $metadata = stream_get_meta_data($stream);
-        
+
         // Parse received cookies
         $response_headers = $metadata['wrapper_data'];
         foreach($response_headers as $response_header){
@@ -364,7 +361,7 @@ class Client
                 }
             }
         }
-        
+
         $response = json_decode(stream_get_contents($stream), true);
 
         if ($this->debug) {
@@ -391,14 +388,14 @@ class Client
         if (! empty($this->username) && ! empty($this->password)) {
             $headers[] = 'Authorization: Basic '.base64_encode($this->username.':'.$this->password);
         }
-        
+
         if (count($this->cookies)){
             $cookie_definitions = array();
             foreach($this->cookies as $cookie_name=>$cookie_value){
                 $cookie_definitions[] = $cookie_name.'='.$cookie_value;
             }
             $headers[] = 'Cookie: '.implode('; ', $cookie_definitions) ;
-            
+
         }
 
         return stream_context_create(array(
@@ -445,7 +442,7 @@ class Client
 
         return isset($payload['result']) ? $payload['result'] : null;
     }
-    
+
     /**
      * Return cookies set
      *
@@ -456,7 +453,7 @@ class Client
     {
         return $this->cookies;
     }
-    
+
     /**
      * Set cookies
      *

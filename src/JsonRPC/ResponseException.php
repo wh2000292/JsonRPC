@@ -8,6 +8,7 @@ use Exception;
  * Class ResponseException
  *
  * @package JsonRPC
+ * @author  Frederic Guillot
  */
 class ResponseException extends Exception
 {
