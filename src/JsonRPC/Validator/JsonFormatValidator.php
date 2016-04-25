@@ -2,7 +2,7 @@
 
 namespace JsonRPC\Validator;
 
-use JsonRPC\InvalidJsonFormat;
+use JsonRPC\Exception\InvalidJsonFormatException;
 
 /**
  * Class JsonFormatValidator
@@ -18,12 +18,12 @@ class JsonFormatValidator
      * @static
      * @access public
      * @param  mixed $payload
-     * @throws InvalidJsonFormat
+     * @throws InvalidJsonFormatException
      */
     public static function validate($payload)
     {
         if (! is_array($payload)) {
-            throw new InvalidJsonFormat('Malformed payload');
+            throw new InvalidJsonFormatException('Malformed payload');
         }
     }
 }

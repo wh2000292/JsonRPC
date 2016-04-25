@@ -2,7 +2,7 @@
 
 namespace JsonRPC\Validator;
 
-use JsonRPC\AuthenticationFailure;
+use JsonRPC\Exception\AuthenticationFailureException;
 
 /**
  * Class UserValidator
@@ -15,7 +15,7 @@ class UserValidator
     public static function validate(array $users, $username, $password)
     {
         if (! empty($users) && (! isset($users[$username]) || $users[$username] !== $password)) {
-            throw new AuthenticationFailure('Access not allowed');
+            throw new AuthenticationFailureException('Access not allowed');
         }
     }
 }

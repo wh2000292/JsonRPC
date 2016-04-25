@@ -5,6 +5,10 @@ namespace JsonRPC;
 use Exception;
 use BadFunctionCallException;
 use InvalidArgumentException;
+use JsonRPC\Exception\AccessDeniedException;
+use JsonRPC\Exception\ConnectionFailureException;
+use JsonRPC\Exception\ResponseException;
+use JsonRPC\Exception\ServerErrorException;
 use RuntimeException;
 
 /**
@@ -313,10 +317,10 @@ class Client
     public function handleHttpErrors(array $headers)
     {
         $exceptions = array(
-            '401' => 'JsonRPC\AccessDeniedException',
-            '403' => 'JsonRPC\AccessDeniedException',
-            '404' => 'JsonRPC\ConnectionFailureException',
-            '500' => 'JsonRPC\ServerErrorException',
+            '401' => 'JsonRPC\Exception\AccessDeniedException',
+            '403' => 'JsonRPC\Exception\AccessDeniedException',
+            '404' => 'JsonRPC\Exception\ConnectionFailureException',
+            '500' => 'JsonRPC\Exception\ServerErrorException',
         );
 
         foreach ($headers as $header) {

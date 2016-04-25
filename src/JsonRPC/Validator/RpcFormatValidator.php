@@ -2,7 +2,7 @@
 
 namespace JsonRPC\Validator;
 
-use JsonRPC\InvalidJsonRpcFormat;
+use JsonRPC\Exception\InvalidJsonRpcFormatException;
 
 /**
  * Class RpcFormatValidator
@@ -18,7 +18,7 @@ class RpcFormatValidator
      * @static
      * @access public
      * @param  array $payload
-     * @throws InvalidJsonRpcFormat
+     * @throws InvalidJsonRpcFormatException
      */
     public static function validate(array $payload)
     {
@@ -28,7 +28,7 @@ class RpcFormatValidator
             $payload['jsonrpc'] !== '2.0' ||
             (isset($payload['params']) && ! is_array($payload['params']))) {
 
-            throw new InvalidJsonRpcFormat('Invalid JSON RPC payload');
+            throw new InvalidJsonRpcFormatException('Invalid JSON RPC payload');
         }
     }
 }

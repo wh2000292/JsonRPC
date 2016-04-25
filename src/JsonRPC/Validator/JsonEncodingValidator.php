@@ -2,7 +2,7 @@
 
 namespace JsonRPC\Validator;
 
-use JsonRPC\ResponseEncodingFailure;
+use JsonRPC\Exception\ResponseEncodingFailureException;
 
 /**
  * Class JsonEncodingValidator
@@ -41,7 +41,7 @@ class JsonEncodingValidator
                     break;
             }
 
-            throw new ResponseEncodingFailure($errorMessage, $jsonError);
+            throw new ResponseEncodingFailureException($errorMessage, $jsonError);
         }
     }
 }

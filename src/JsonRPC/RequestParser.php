@@ -3,6 +3,7 @@
 namespace JsonRPC;
 
 use Exception;
+use JsonRPC\Exception\InvalidJsonRpcFormatException;
 use JsonRPC\Validator\JsonFormatValidator;
 use JsonRPC\Validator\RpcFormatValidator;
 
@@ -118,7 +119,7 @@ class RequestParser
                     ->build();
             }
         } catch (Exception $e) {
-            if ($e instanceof InvalidJsonRpcFormat || ! $this->isNotification()) {
+            if ($e instanceof InvalidJsonRpcFormatException || ! $this->isNotification()) {
                 return ResponseBuilder::create()
                     ->withId(isset($this->payload['id']) ? $this->payload['id'] : null)
                     ->withException($e)

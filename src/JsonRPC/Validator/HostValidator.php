@@ -2,7 +2,7 @@
 
 namespace JsonRPC\Validator;
 
-use JsonRPC\AccessDeniedException;
+use JsonRPC\Exception\AccessDeniedException;
 
 /**
  * Class HostValidator

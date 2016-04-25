@@ -58,7 +58,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException JsonRPC\ServerErrorException
+     * @expectedException JsonRPC\Exception\ServerErrorException
      */
     public function testServerError()
     {
@@ -67,7 +67,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException JsonRPC\ConnectionFailureException
+     * @expectedException JsonRPC\Exception\ConnectionFailureException
      */
     public function testBadUrl()
     {
@@ -76,7 +76,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException JsonRPC\ConnectionFailureException
+     * @expectedException JsonRPC\Exception\ConnectionFailureException
      */
     public function test404()
     {
@@ -85,7 +85,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException JsonRPC\AccessDeniedException
+     * @expectedException JsonRPC\Exception\AccessDeniedException
      */
     public function testAccessForbiddenError()
     {
@@ -94,7 +94,7 @@ class ClientTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException JsonRPC\AccessDeniedException
+     * @expectedException JsonRPC\Exception\AccessDeniedException
      */
     public function testAccessNotAllowedError()
     {
