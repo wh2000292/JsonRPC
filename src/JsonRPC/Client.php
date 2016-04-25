@@ -465,7 +465,7 @@ class Client
     {
         if ($replace) {
             $this->cookies = $cookies;
-        }else{
+        } else {
             $this->cookies = array_merge($this->cookies, $cookies);
         }
     }
