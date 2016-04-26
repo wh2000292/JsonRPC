@@ -93,6 +93,23 @@ class Client
     }
 
     /**
+     * Set username and password
+     *
+     * @access public
+     * @param  string $username
+     * @param  string $password
+     * @return $this
+     */
+    public function authentication($username, $password)
+    {
+        $this->httpClient
+            ->withUsername($username)
+            ->withPassword($password);
+
+        return $this;
+    }
+
+    /**
      * Automatic mapping of procedures
      *
      * @access public
