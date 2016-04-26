@@ -1,9 +1,11 @@
 <?php
 
-namespace JsonRPC;
+namespace JsonRPC\Request;
 
 use Exception;
 use JsonRPC\Exception\InvalidJsonRpcFormatException;
+use JsonRPC\ProcedureHandler;
+use JsonRPC\Response\ResponseBuilder;
 use JsonRPC\Validator\JsonFormatValidator;
 use JsonRPC\Validator\RpcFormatValidator;
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace JsonRPC;
+namespace JsonRPC\Response;
 
 use Exception;
 use JsonRPC\Validator\JsonEncodingValidator;

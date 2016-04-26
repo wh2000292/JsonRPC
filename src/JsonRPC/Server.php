@@ -4,6 +4,8 @@ namespace JsonRPC;
 
 use Closure;
 use Exception;
+use JsonRPC\Request\RequestParser;
+use JsonRPC\Response\ResponseBuilder;
 use JsonRPC\Validator\HostValidator;
 use JsonRPC\Validator\JsonFormatValidator;
 use JsonRPC\Validator\UserValidator;

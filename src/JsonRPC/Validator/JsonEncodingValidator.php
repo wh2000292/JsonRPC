@@ -18,9 +18,6 @@ class JsonEncodingValidator
 
         if ($jsonError !== JSON_ERROR_NONE) {
             switch ($jsonError) {
-                case JSON_ERROR_NONE:
-                    $errorMessage = 'No errors';
-                    break;
                 case JSON_ERROR_DEPTH:
                     $errorMessage = 'Maximum stack depth exceeded';
                     break;
