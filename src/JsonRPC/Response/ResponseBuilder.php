@@ -3,6 +3,7 @@
 namespace JsonRPC\Response;
 
 use Exception;
+use JsonRPC\Exception\ResponseException;
 use JsonRPC\Validator\JsonEncodingValidator;
 
 /**
@@ -75,7 +76,7 @@ class ResponseBuilder
      * Exception
      *
      * @access private
-     * @var Exception
+     * @var ResponseException
      */
     private $exception;
 
@@ -298,7 +299,7 @@ class ResponseBuilder
                 case 'JsonRPC\Exception\ResponseException':
                     $this->errorCode = $this->exception->getCode();
                     $this->errorMessage = $this->exception->getMessage();
-                    $this->errorData = $this->getData();
+                    $this->errorData = $this->exception->getData();
                     break;
                 default:
                     $this->errorCode = $this->exception->getCode();

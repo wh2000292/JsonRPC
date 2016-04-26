@@ -125,9 +125,10 @@ class Server
     {
         if (! empty($header)) {
             $header = 'HTTP_'.str_replace('-', '_', strtoupper($header));
+            $value = $this->getServerVariable($header);
 
-            if ($this->getServerVariable($header)) {
-                list($this->username, $this->password) = explode(':', @base64_decode($this->serverVariable[$header]));
+            if (! empty($value)) {
+                list($this->username, $this->password) = explode(':', base64_decode($value));
             }
         }
 
