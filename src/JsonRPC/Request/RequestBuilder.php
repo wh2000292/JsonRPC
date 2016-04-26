@@ -96,11 +96,11 @@ class RequestBuilder
         $payload = array(
             'jsonrpc' => '2.0',
             'method' => $this->procedure,
-            'id' => mt_rand(),
+            'id' => $this->id ?: mt_rand(),
         );
 
-        if (! empty($params)) {
-            $payload['params'] = $params;
+        if (! empty($this->params)) {
+            $payload['params'] = $this->params;
         }
 
         return json_encode($payload);
