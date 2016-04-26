@@ -57,7 +57,6 @@ $server->register('random', function ($start, $end) {
 // Return the response to the client
 echo $server->execute();
 
-?>
 ```
 
 Class/Method binding:
@@ -91,7 +90,6 @@ $server->attach(new Api);
 
 echo $server->execute();
 
-?>
 ```
 
 Before callback:
@@ -128,14 +126,12 @@ $server->authentication(['myuser' => 'mypassword']);
 $server->before('beforeProcedure');
 
 $server->attach(new Api);
-
 echo $server->execute();
 
-?>
 ```
 
 You can use this method to implements a custom authentication system or anything else.
-If you would like to reject the authentication, you can throw the exception `JsonRPC\AuthenticationFailure`.
+If you would like to reject the authentication, you can raise the exception `JsonRPC\Exception\AuthenticationFailureException`.
 
 ### Client
 
@@ -148,8 +144,6 @@ use JsonRPC\Client;
 
 $client = new Client('http://localhost/server.php');
 $result = $client->execute('addition', [3, 5]);
-
-var_dump($result);
 ```
 
 Example with named arguments:
@@ -161,13 +155,11 @@ use JsonRPC\Client;
 
 $client = new Client('http://localhost/server.php');
 $result = $client->execute('random', ['end' => 10, 'start' => 1]);
-
-var_dump($result);
 ```
 
 Arguments are called in the right order.
 
-Examples with shortcut methods:
+Examples with the magic method `__call()`:
 
 ```php
 <?php
@@ -176,8 +168,6 @@ use JsonRPC\Client;
 
 $client = new Client('http://localhost/server.php');
 $result = $client->random(50, 100);
-
-var_dump($result);
 ```
 
 The example above use positional arguments for the request and this one use named arguments:
@@ -210,16 +200,16 @@ print_r($results);
 All results are stored at the same position of the call.
 
 ### Client exceptions
+
 Client exceptions are normally thrown when an error is returned by the server. You can change this behaviour by
-using the 'suppress_errors' option which causes exceptions to be returned. This can be extremely useful when
+using the `$returnException` argument which causes exceptions to be returned. This can be extremely useful when
 executing the batch request. 
 
 - `BadFunctionCallException`: Procedure not found on the server
 - `InvalidArgumentException`: Wrong procedure arguments
-- `JsonRPC\AccessDeniedException`: Access denied
-- `JsonRPC\ConnectionFailureException`: Connection failure
-- `JsonRPC\ServerErrorException`: Internal server error
-- `RuntimeException`: Protocol error
+- `JsonRPC\Exception\AccessDeniedException`: Access denied
+- `JsonRPC\Exception\ConnectionFailureException`: Connection failure
+- `JsonRPC\Exception\ServerErrorException`: Internal server error
 
 ### Enable client debugging
 
@@ -231,10 +221,10 @@ You can enable the debug to see the JSON request and response:
 use JsonRPC\Client;
 
 $client = new Client('http://localhost/server.php');
-$client->debug = true;
+$client->getHttpClient()->withDebug();
 ```
 
-The debug output is sent to the PHP's system logger.
+The debug output is sent to the PHP system logger.
 You can configure the log destination in your `php.ini`.
 
 Output example:
@@ -259,7 +249,7 @@ Output example:
 
 ### IP based client restrictions
 
-The server can allow only some IP adresses:
+The server can allow only some IP addresses:
 
 ```php
 <?php
@@ -270,8 +260,6 @@ $server = new Server;
 
 // IP client restrictions
 $server->allowHosts(['192.168.0.1', '127.0.0.1']);
-
-// Procedures registration
 
 [...]
 
@@ -295,8 +283,6 @@ $server = new Server;
 // List of users to allow
 $server->authentication(['user1' => 'password1', 'user2' => 'password2']);
 
-// Procedures registration
-
 [...]
 
 // Return the response to the client
@@ -311,7 +297,9 @@ On the client, set credentials like that:
 use JsonRPC\Client;
 
 $client = new Client('http://localhost/server.php');
-$client->authentication('user1', 'password1');
+$client->getHttpClient()
+    ->withUsername('Foo')
+    ->withPassword('Bar');
 ```
 
 If the authentication failed, the client throw a RuntimeException.
@@ -346,8 +334,6 @@ $server = new Server;
 // Exceptions that should be relayed to the client, if they occur
 $server->attachException('MyException');
 
-// Procedures registration
-
 [...]
 
 // Return the response to the client
@@ -358,10 +344,4 @@ Then you can throw that exception inside your procedure:
 
 ```
 throw new MyException("An error occured", 123);
-```
-
-To relay all exceptions regardless of type, leave out the exception class name:
-
-```
-$server->attachException();
 ```
