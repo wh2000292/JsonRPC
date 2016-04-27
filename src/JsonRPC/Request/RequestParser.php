@@ -3,6 +3,8 @@
 namespace JsonRPC\Request;
 
 use Exception;
+use JsonRPC\Exception\AccessDeniedException;
+use JsonRPC\Exception\AuthenticationFailureException;
 use JsonRPC\Exception\InvalidJsonRpcFormatException;
 use JsonRPC\ProcedureHandler;
 use JsonRPC\Response\ResponseBuilder;
@@ -20,18 +22,18 @@ class RequestParser
     /**
      * Request payload
      *
-     * @access private
+     * @access protected
      * @var mixed
      */
-    private $payload;
+    protected $payload;
 
     /**
      * ProcedureHandler
      *
-     * @access private
+     * @access protected
      * @var ProcedureHandler
      */
-    private $procedureHandler;
+    protected $procedureHandler;
 
     /**
      * Get new object instance
@@ -76,33 +78,10 @@ class RequestParser
      *
      * @access public
      * @return string
+     * @throws AccessDeniedException
+     * @throws AuthenticationFailureException
      */
     public function parse()
-    {
-        if ($this->isBatchRequest()) {
-            $responses = array();
-
-            foreach ($this->payload as $payload) {
-                $responses[] = self::create()
-                    ->withPayload($payload)
-                    ->withProcedureHandler($this->procedureHandler)
-                    ->parse();
-            }
-
-            $responses = array_filter($responses);
-            return empty($responses) ? '' : '['.implode(',', $responses).']';
-        }
-
-        return $this->parseRequest();
-    }
-
-    /**
-     * Parse a single request
-     *
-     * @access private
-     * @return string
-     */
-    private function parseRequest()
     {
         try {
 
@@ -121,6 +100,11 @@ class RequestParser
                     ->build();
             }
         } catch (Exception $e) {
+
+            if ($e instanceof AccessDeniedException || $e instanceof AuthenticationFailureException) {
+                throw $e;
+            }
+
             if ($e instanceof InvalidJsonRpcFormatException || ! $this->isNotification()) {
                 return ResponseBuilder::create()
                     ->withId(isset($this->payload['id']) ? $this->payload['id'] : null)
@@ -130,17 +114,6 @@ class RequestParser
         }
 
         return '';
-    }
-
-    /**
-     * Return true if we have a batch request
-     *
-     * @access public
-     * @return boolean
-     */
-    private function isBatchRequest()
-    {
-        return is_array($this->payload) && array_keys($this->payload) === range(0, count($this->payload) - 1);
     }
 
     /**

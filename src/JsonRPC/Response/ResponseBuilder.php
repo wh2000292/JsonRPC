@@ -2,7 +2,14 @@
 
 namespace JsonRPC\Response;
 
+use BadFunctionCallException;
 use Exception;
+use InvalidArgumentException;
+use JsonRPC\Exception\AccessDeniedException;
+use JsonRPC\Exception\AuthenticationFailureException;
+use JsonRPC\Exception\InvalidJsonFormatException;
+use JsonRPC\Exception\InvalidJsonRpcFormatException;
+use JsonRPC\Exception\ResponseEncodingFailureException;
 use JsonRPC\Exception\ResponseException;
 use JsonRPC\Validator\JsonEncodingValidator;
 
@@ -176,6 +183,28 @@ class ResponseBuilder
     }
 
     /**
+     * Get status
+     *
+     * @access public
+     * @return string
+     */
+    public function getStatus()
+    {
+        return $this->status;
+    }
+
+    /**
+     * Get headers
+     *
+     * @access public
+     * @return string[]
+     */
+    public function getHeaders()
+    {
+        return $this->headers;
+    }
+
+    /**
      * Build response
      *
      * @access public
@@ -197,14 +226,12 @@ class ResponseBuilder
      */
     public function sendHeaders()
     {
-        if (php_sapi_name() !== 'cli') {
-            if (! empty($this->status)) {
-                header($this->status);
-            }
+        if (! empty($this->status)) {
+            header($this->status);
+        }
 
-            foreach ($this->headers as $name => $value) {
-                header($name.': '.$value);
-            }
+        foreach ($this->headers as $name => $value) {
+            header($name.': '.$value);
         }
 
         return $this;
@@ -219,17 +246,15 @@ class ResponseBuilder
     private function buildResponse()
     {
         $response = array('jsonrpc' => '2.0');
-
         $this->handleExceptions();
 
-        if (! empty($this->errorCode)) {
+        if (! empty($this->errorMessage)) {
             $response['error'] = $this->buildErrorResponse();
         } else {
             $response['result'] = $this->result;
         }
 
         $response['id'] = $this->id;
-
         return $response;
     }
 
@@ -260,51 +285,40 @@ class ResponseBuilder
      */
     private function handleExceptions()
     {
-        if ($this->exception !== null) {
-            switch (get_class($this->exception)) {
-                case 'JsonRPC\Exception\InvalidJsonFormatException':
-                    $this->errorCode = -32700;
-                    $this->errorMessage = 'Parse error';
-                    $this->id = null;
-                    break;
-                case 'JsonRPC\Exception\InvalidJsonRpcFormatException':
-                    $this->errorCode = -32600;
-                    $this->errorMessage = 'Invalid Request';
-                    $this->id = null;
-                    break;
-                case 'BadFunctionCallException':
-                    $this->errorCode = -32601;
-                    $this->errorMessage = 'Method not found';
-                    break;
-                case 'InvalidArgumentException':
-                    $this->errorCode = -32602;
-                    $this->errorMessage = 'Invalid params';
-                    break;
-                case 'JsonRPC\Exception\ResponseEncodingFailureException':
-                    $this->errorCode = -32603;
-                    $this->errorMessage = 'Internal error';
-                    $this->errorData = $this->exception->getMessage();
-                    break;
-                case 'JsonRPC\Exception\AuthenticationFailureException':
-                    $this->errorCode = 401;
-                    $this->errorMessage = 'Unauthorized';
-                    $this->withHeader('WWW-Authenticate', 'Basic realm="JsonRPC"');
-                    $this->withStatus('HTTP/1.0 401 Unauthorized');
-                    break;
-                case 'JsonRPC\Exception\AccessDeniedException':
-                    $this->errorCode = 403;
-                    $this->errorMessage = 'Forbidden';
-                    $this->withStatus('HTTP/1.0 403 Forbidden');
-                    break;
-                case 'JsonRPC\Exception\ResponseException':
-                    $this->errorCode = $this->exception->getCode();
-                    $this->errorMessage = $this->exception->getMessage();
-                    $this->errorData = $this->exception->getData();
-                    break;
-                default:
-                    $this->errorCode = $this->exception->getCode();
-                    $this->errorMessage = $this->exception->getMessage();
-            }
+        if ($this->exception instanceof InvalidJsonFormatException) {
+            $this->errorCode = -32700;
+            $this->errorMessage = 'Parse error';
+            $this->id = null;
+        } elseif ($this->exception instanceof InvalidJsonRpcFormatException) {
+            $this->errorCode = -32600;
+            $this->errorMessage = 'Invalid Request';
+            $this->id = null;
+        } elseif ($this->exception instanceof BadFunctionCallException) {
+            $this->errorCode = -32601;
+            $this->errorMessage = 'Method not found';
+        } elseif ($this->exception instanceof InvalidArgumentException) {
+            $this->errorCode = -32602;
+            $this->errorMessage = 'Invalid params';
+        } elseif ($this->exception instanceof ResponseEncodingFailureException) {
+            $this->errorCode = -32603;
+            $this->errorMessage = 'Internal error';
+            $this->errorData = $this->exception->getMessage();
+        } elseif ($this->exception instanceof AuthenticationFailureException) {
+            $this->errorCode = 401;
+            $this->errorMessage = 'Unauthorized';
+            $this->status = 'HTTP/1.0 401 Unauthorized';
+            $this->withHeader('WWW-Authenticate', 'Basic realm="JsonRPC"');
+        } elseif ($this->exception instanceof AccessDeniedException) {
+            $this->errorCode = 403;
+            $this->errorMessage = 'Forbidden';
+            $this->status = 'HTTP/1.0 403 Forbidden';
+        } elseif ($this->exception instanceof ResponseException) {
+            $this->errorCode = $this->exception->getCode();
+            $this->errorMessage = $this->exception->getMessage();
+            $this->errorData = $this->exception->getData();
+        } elseif ($this->exception instanceof Exception) {
+            $this->errorCode = $this->exception->getCode();
+            $this->errorMessage = $this->exception->getMessage();
         }
     }
 }

@@ -3,6 +3,7 @@
 use JsonRPC\Server;
 
 require_once __DIR__.'/../vendor/autoload.php';
+require_once __DIR__.'/Response/HeaderMockTest.php';
 
 class C
 {
@@ -12,7 +13,7 @@ class C
     }
 }
 
-class ServerProtocolTest extends PHPUnit_Framework_TestCase
+class ServerProtocolTest extends \JsonRPC\Response\HeaderMockTest
 {
     public function testPositionalParameters()
     {
@@ -37,7 +38,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
         );
     }
 
-
     public function testNamedParameters()
     {
         $subtract = function ($minuend, $subtrahend) {
@@ -61,12 +61,10 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
         );
     }
 
-
     public function testNotification()
     {
         $update = function($p1, $p2, $p3, $p4, $p5) {};
         $foobar = function() {};
-
 
         $server = new Server('{"jsonrpc": "2.0", "method": "update", "params": [1,2,3,4,5]}');
         $server->register('update', $update);
@@ -74,14 +72,12 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals('', $server->execute());
 
-
         $server = new Server('{"jsonrpc": "2.0", "method": "foobar"}');
         $server->register('update', $update);
         $server->register('foobar', $foobar);
 
         $this->assertEquals('', $server->execute());
     }
-
 
     public function testNoMethod()
     {
@@ -93,7 +89,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
         );
     }
 
-
     public function testInvalidJson()
     {
         $server = new Server('{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]');
@@ -103,7 +98,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
             json_decode($server->execute(), true)
         );
     }
-
 
     public function testInvalidRequest()
     {
@@ -131,7 +125,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
         );
     }
 
-
     public function testBatchInvalidJson()
     {
         $server = new Server('[
@@ -145,7 +138,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
         );
     }
 
-
     public function testBatchEmptyArray()
     {
         $server = new Server('[]');
@@ -156,7 +148,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
         );
     }
 
-
     public function testBatchNotEmptyButInvalid()
     {
         $server = new Server('[1]');
@@ -166,7 +157,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
             json_decode($server->execute(), true)
         );
     }
-
 
     public function testBatchInvalid()
     {
@@ -181,7 +171,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
             json_decode($server->execute(), true)
         );
     }
-
 
     public function testBatchOk()
     {
@@ -227,7 +216,6 @@ class ServerProtocolTest extends PHPUnit_Framework_TestCase
             json_decode($response, true)
         );
     }
-
 
     public function testBatchNotifications()
     {

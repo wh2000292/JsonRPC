@@ -4,6 +4,7 @@ namespace JsonRPC;
 
 use Closure;
 use Exception;
+use JsonRPC\Request\BatchRequestParser;
 use JsonRPC\Request\RequestParser;
 use JsonRPC\Response\ResponseBuilder;
 use JsonRPC\Validator\HostValidator;
@@ -102,19 +103,6 @@ class Server
     }
 
     /**
-     * Set a payload
-     *
-     * @access public
-     * @param  array   $payload
-     * @return Server
-     */
-    public function setPayload(array $payload)
-    {
-        $this->payload = $payload;
-        return $this;
-    }
-
-    /**
      * Define alternative authentication header
      *
      * @access public
@@ -133,6 +121,17 @@ class Server
         }
 
         return $this;
+    }
+
+    /**
+     * Get ProcedureHandler
+     *
+     * @access public
+     * @return ProcedureHandler
+     */
+    public function getProcedureHandler()
+    {
+        return $this->procedureHandler;
     }
 
     /**
@@ -260,6 +259,8 @@ class Server
      */
     public function execute()
     {
+        $responseBuilder = ResponseBuilder::create();
+
         try {
             $this->procedureHandler
                 ->withUsername($this->getUsername())
@@ -268,19 +269,36 @@ class Server
             JsonFormatValidator::validate($this->payload);
             HostValidator::validate($this->hosts, $this->getServerVariable('REMOTE_ADDR'));
             UserValidator::validate($this->users, $this->getUsername(), $this->getPassword());
-            ResponseBuilder::create()->sendHeaders();
 
-            return RequestParser::create()
+            $response = $this->parseRequest();
+
+        } catch (Exception $e) {
+            $response = $responseBuilder->withException($e)->build();
+        }
+
+        $responseBuilder->sendHeaders();
+        return $response;
+    }
+
+    /**
+     * Parse incoming request
+     *
+     * @access private
+     * @return string
+     */
+    private function parseRequest()
+    {
+        if (BatchRequestParser::isBatchRequest($this->payload)) {
+            return BatchRequestParser::create()
                 ->withPayload($this->payload)
                 ->withProcedureHandler($this->procedureHandler)
                 ->parse();
-
-        } catch (Exception $e) {
-            return ResponseBuilder::create()
-                ->withException($e)
-                ->sendHeaders()
-                ->build();
         }
+
+        return RequestParser::create()
+            ->withPayload($this->payload)
+            ->withProcedureHandler($this->procedureHandler)
+            ->parse();
     }
 
     /**
