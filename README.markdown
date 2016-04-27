@@ -343,5 +343,22 @@ echo $server->execute();
 Then you can throw that exception inside your procedure:
 
 ```
-throw new MyException("An error occured", 123);
+throw new MyException("An error occurred", 123);
+```
+
+### Callback before client request
+
+You can use a callback to change the HTTP headers or the URL before to make the request to the server.
+
+Example:
+
+```php
+<?php
+
+$client = new Client();
+$client->getHttpClient()->withBeforeRequestCallback(function(HttpClient $client, $payload) {
+    $client->withHeaders(array('Content-Length: '.strlen($payload)));
+});
+
+$client->myProcedure(123);
 ```

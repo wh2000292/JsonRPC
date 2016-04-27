@@ -2,6 +2,7 @@
 
 namespace JsonRPC;
 
+use Closure;
 use JsonRPC\Exception\AccessDeniedException;
 use JsonRPC\Exception\ConnectionFailureException;
 use JsonRPC\Exception\ServerErrorException;
@@ -82,6 +83,14 @@ class HttpClient
      * @var boolean
      */
     private $verifySslCertificate = true;
+
+    /**
+     * Callback called before the doing the request
+     *
+     * @access private
+     * @var Closure
+     */
+    private $beforeRequest;
 
     /**
      * HttpClient constructor
@@ -200,6 +209,19 @@ class HttpClient
     }
 
     /**
+     * Assign a callback before the request
+     *
+     * @access public
+     * @param  Closure $closure
+     * @return $this
+     */
+    public function withBeforeRequestCallback(Closure $closure)
+    {
+        $this->beforeRequest = $closure;
+        return $this;
+    }
+
+    /**
      * Get cookies
      *
      * @access public
@@ -220,7 +242,11 @@ class HttpClient
      */
     public function execute($payload)
     {
-        $stream = @fopen(trim($this->url), 'r', false, $this->buildContext($payload));
+        if (is_callable($this->beforeRequest)) {
+            call_user_func_array($this->beforeRequest, array($this, $payload));
+        }
+
+        $stream = fopen(trim($this->url), 'r', false, $this->buildContext($payload));
 
         if (! is_resource($stream)) {
             throw new ConnectionFailureException('Unable to establish a connection');
@@ -292,7 +318,7 @@ class HttpClient
      */
     private function parseCookies(array $headers)
     {
-        foreach($headers as $header) {
+        foreach ($headers as $header) {
             $pos = stripos($header, 'Set-Cookie:');
 
             if ($pos !== false) {
