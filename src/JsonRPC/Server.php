@@ -22,84 +22,123 @@ class Server
     /**
      * Allowed hosts
      *
-     * @access private
+     * @access protected
      * @var array
      */
-    private $hosts = array();
+    protected $hosts = array();
 
     /**
      * Data received from the client
      *
-     * @access private
+     * @access protected
      * @var array
      */
-    private $payload = array();
+    protected $payload = array();
 
     /**
      * List of exception classes that should be relayed to client
      *
-     * @access private
+     * @access protected
      * @var array
      */
-    private $exceptions = array();
+    protected $exceptions = array();
 
     /**
      * Username
      *
-     * @access private
+     * @access protected
      * @var string
      */
-    private $username = '';
+    protected $username = '';
 
     /**
      * Password
      *
-     * @access private
+     * @access protected
      * @var string
      */
-    private $password = '';
+    protected $password = '';
 
     /**
      * Allowed users
      *
-     * @access private
+     * @access protected
      * @var array
      */
-    private $users = array();
+    protected $users = array();
 
     /**
      * $_SERVER
      *
-     * @access private
+     * @access protected
      * @var array
      */
-    private $serverVariable;
+    protected $serverVariable;
 
     /**
      * ProcedureHandler object
      *
-     * @access private
+     * @access protected
      * @var ProcedureHandler
      */
-    private $procedureHandler;
+    protected $procedureHandler;
+
+    /**
+     * Response builder
+     *
+     * @access protected
+     * @var ResponseBuilder
+     */
+    protected $responseBuilder;
+
+    /**
+     * Response builder
+     *
+     * @access protected
+     * @var RequestParser
+     */
+    protected $requestParser;
+
+    /**
+     *
+     * Batch request parser
+     *
+     * @access protected
+     * @var BatchRequestParser
+     */
+    protected $batchRequestParser;
 
     /**
      * Constructor
      *
      * @access public
-     * @param  string $request
-     * @param array   $server
+     * @param  string             $request
+     * @param  array              $server
+     * @param  ResponseBuilder    $responseBuilder
+     * @param  RequestParser      $requestParser
+     * @param  BatchRequestParser $batchRequestParser
+     * @param  ProcedureHandler   $procedureHandler
      */
-    public function __construct($request = '', array $server = array())
-    {
+    public function __construct(
+        $request = '',
+        array $server = array(),
+        ResponseBuilder $responseBuilder = null,
+        RequestParser $requestParser = null,
+        BatchRequestParser $batchRequestParser = null,
+        ProcedureHandler $procedureHandler = null
+    ) {
         if ($request !== '') {
             $this->payload = json_decode($request, true);
         } else {
             $this->payload = json_decode(file_get_contents('php://input'), true);
         }
 
+        $this->responseBuilder = $responseBuilder ?: ResponseBuilder::create();
+        $this->requestParser = $requestParser ?: RequestParser::create();
+        $this->batchRequestParser = $batchRequestParser ?: BatchRequestParser::create();
+
         $this->serverVariable = $server ?: $_SERVER;
-        $this->procedureHandler = new ProcedureHandler();
+        $this->procedureHandler = $procedureHandler ?: new ProcedureHandler();
     }
 
     /**
@@ -259,8 +298,6 @@ class Server
      */
     public function execute()
     {
-        $responseBuilder = ResponseBuilder::create();
-
         try {
             $this->procedureHandler
                 ->withUsername($this->getUsername())
@@ -273,29 +310,29 @@ class Server
             $response = $this->parseRequest();
 
         } catch (Exception $e) {
-            $response = $responseBuilder->withException($e)->build();
+            $response = $this->responseBuilder->withException($e)->build();
         }
 
-        $responseBuilder->sendHeaders();
+        $this->responseBuilder->sendHeaders();
         return $response;
     }
 
     /**
      * Parse incoming request
      *
-     * @access private
+     * @access protected
      * @return string
      */
-    private function parseRequest()
+    protected function parseRequest()
     {
         if (BatchRequestParser::isBatchRequest($this->payload)) {
-            return BatchRequestParser::create()
+            return $this->batchRequestParser
                 ->withPayload($this->payload)
                 ->withProcedureHandler($this->procedureHandler)
                 ->parse();
         }
 
-        return RequestParser::create()
+        return $this->requestParser
             ->withPayload($this->payload)
             ->withProcedureHandler($this->procedureHandler)
             ->parse();
@@ -304,11 +341,11 @@ class Server
     /**
      * Check existence and get value of server variable
      *
-     * @access private
+     * @access protected
      * @param  string $variable
      * @return string|null
      */
-    private function getServerVariable($variable)
+    protected function getServerVariable($variable)
     {
         return isset($this->serverVariable[$variable]) ? $this->serverVariable[$variable] : null;
     }
