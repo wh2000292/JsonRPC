@@ -65,6 +65,78 @@ class ServerTest extends HeaderMockTest
         $this->assertEquals('{"jsonrpc":"2.0","result":7,"id":"1"}', $server->execute());
     }
 
+
+
+    public function testExecuteRequestParserOverride()
+    {
+        $requestParser = $this->getMockBuilder('JsonRPC\Request\RequestParser')
+            ->getMock();
+
+        $requestParser->method('withPayload')->willReturn($requestParser);
+        $requestParser->method('withProcedureHandler')->willReturn($requestParser);
+
+        $server = new Server($this->payload, array(), null, $requestParser);
+
+        $requestParser->expects($this->once())
+            ->method('parse');
+
+        $server->execute();
+    }
+
+    public function testExecuteBatchRequestParserOverride()
+    {
+        $batchRequestParser = $this->getMockBuilder('JsonRPC\Request\BatchRequestParser')
+            ->getMock();
+
+        $batchRequestParser->method('withPayload')->willReturn($batchRequestParser);
+        $batchRequestParser->method('withProcedureHandler')->willReturn($batchRequestParser);
+
+        $server = new Server('["...", "..."]', array(), null, null, $batchRequestParser);
+
+        $batchRequestParser->expects($this->once())
+            ->method('parse');
+
+        $server->execute();
+    }
+
+    public function testExecuteResponseBuilderOverride()
+    {
+        $responseBuilder = $this->getMockBuilder('JsonRPC\Response\ResponseBuilder')
+            ->getMock();
+
+        $responseBuilder->expects($this->once())
+            ->method('sendHeaders');
+
+        $server = new Server($this->payload, array(), $responseBuilder);
+        $server->execute();
+    }
+
+    public function testExecuteProcedureHandlerOverride()
+    {
+        $batchRequestParser = $this->getMockBuilder('JsonRPC\Request\BatchRequestParser')
+            ->getMock();
+
+        $procedureHandler = $this->getMockBuilder('JsonRPC\ProcedureHandler')
+            ->getMock();
+
+        $batchRequestParser->method('withPayload')->willReturn($batchRequestParser);
+        $batchRequestParser->method('withProcedureHandler')->willReturn($batchRequestParser);
+
+        $procedureHandler->method('withUsername')->willReturn($procedureHandler);
+        $procedureHandler->method('withPassword')->willReturn($procedureHandler);
+
+        $server = new Server('["...", "..."]', array(), null, null, $batchRequestParser, $procedureHandler);
+
+        $batchRequestParser->expects($this->once())
+            ->method('parse');
+
+        $batchRequestParser->expects($this->once())
+            ->method('withProcedureHandler')
+            ->with($this->identicalTo($procedureHandler));
+
+        $server->execute();
+    }
+
     public function testWhenCallbackRaiseForbiddenException()
     {
         $server = new Server($this->payload);
