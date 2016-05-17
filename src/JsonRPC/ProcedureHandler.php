@@ -19,50 +19,50 @@ class ProcedureHandler
     /**
      * List of procedures
      *
-     * @access private
+     * @access protected
      * @var array
      */
-    private $callbacks = array();
+    protected $callbacks = array();
 
     /**
      * List of classes
      *
-     * @access private
+     * @access protected
      * @var array
      */
-    private $classes = array();
+    protected $classes = array();
 
     /**
      * List of instances
      *
-     * @access private
+     * @access protected
      * @var array
      */
-    private $instances = array();
+    protected $instances = array();
 
     /**
      * Method name to execute before the procedure
      *
-     * @access private
+     * @access protected
      * @var string
      */
-    private $before = '';
+    protected $before = '';
 
     /**
      * Username
      *
-     * @access private
+     * @access protected
      * @var string
      */
-    private $username;
+    protected $username;
 
     /**
      * Password
      *
-     * @access private
+     * @access protected
      * @var string
      */
-    private $password;
+    protected $password;
 
     /**
      * Set username
