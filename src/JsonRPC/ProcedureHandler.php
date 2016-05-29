@@ -41,56 +41,6 @@ class ProcedureHandler
     protected $instances = array();
 
     /**
-     * Method name to execute before the procedure
-     *
-     * @access protected
-     * @var string
-     */
-    protected $before = '';
-
-    /**
-     * Username
-     *
-     * @access protected
-     * @var string
-     */
-    protected $username;
-
-    /**
-     * Password
-     *
-     * @access protected
-     * @var string
-     */
-    protected $password;
-
-    /**
-     * Set username
-     *
-     * @access public
-     * @param  string $username
-     * @return $this
-     */
-    public function withUsername($username)
-    {
-        $this->username = $username;
-        return $this;
-    }
-
-    /**
-     * Set password
-     *
-     * @access public
-     * @param  string $password
-     * @return $this
-     */
-    public function withPassword($password)
-    {
-        $this->password = $password;
-        return $this;
-    }
-
-    /**
      * Register a new procedure
      *
      * @access public
@@ -137,19 +87,6 @@ class ProcedureHandler
     }
 
     /**
-     * Attach a method that will be called before the procedure
-     *
-     * @access public
-     * @param  string  $before
-     * @return Server
-     */
-    public function withBeforeMethod($before)
-    {
-        $this->before = $before;
-        return $this;
-    }
-
-    /**
      * Execute the procedure
      *
      * @access public
@@ -161,8 +98,7 @@ class ProcedureHandler
     {
         if (isset($this->callbacks[$procedure])) {
             return $this->executeCallback($this->callbacks[$procedure], $params);
-        }
-        else if (isset($this->classes[$procedure]) && method_exists($this->classes[$procedure][0], $this->classes[$procedure][1])) {
+        } elseif (isset($this->classes[$procedure]) && method_exists($this->classes[$procedure][0], $this->classes[$procedure][1])) {
             return $this->executeMethod($this->classes[$procedure][0], $this->classes[$procedure][1], $params);
         }
 
@@ -209,17 +145,6 @@ class ProcedureHandler
     public function executeMethod($class, $method, $params)
     {
         $instance = is_string($class) ? new $class : $class;
-
-        // Execute before action
-        if (! empty($this->before)) {
-            if (is_callable($this->before)) {
-                call_user_func_array($this->before, array($this->username, $this->password, get_class($class), $method));
-            }
-            else if (method_exists($instance, $this->before)) {
-                $instance->{$this->before}($this->username, $this->password, get_class($class), $method);
-            }
-        }
-
         $reflection = new ReflectionMethod($class, $method);
 
         $arguments = $this->getArguments(
@@ -236,29 +161,29 @@ class ProcedureHandler
      * Get procedure arguments
      *
      * @access public
-     * @param  array    $request_params       Incoming arguments
-     * @param  array    $method_params        Procedure arguments
-     * @param  integer  $nb_required_params   Number of required parameters
-     * @param  integer  $nb_max_params        Maximum number of parameters
+     * @param  array   $requestParams    Incoming arguments
+     * @param  array   $methodParams     Procedure arguments
+     * @param  integer $nbRequiredParams Number of required parameters
+     * @param  integer $nbMaxParams      Maximum number of parameters
      * @return array
      */
-    public function getArguments(array $request_params, array $method_params, $nb_required_params, $nb_max_params)
+    public function getArguments(array $requestParams, array $methodParams, $nbRequiredParams, $nbMaxParams)
     {
-        $nb_params = count($request_params);
+        $nbParams = count($requestParams);
 
-        if ($nb_params < $nb_required_params) {
+        if ($nbParams < $nbRequiredParams) {
             throw new InvalidArgumentException('Wrong number of arguments');
         }
 
-        if ($nb_params > $nb_max_params) {
+        if ($nbParams > $nbMaxParams) {
             throw new InvalidArgumentException('Too many arguments');
         }
 
-        if ($this->isPositionalArguments($request_params)) {
-            return $request_params;
+        if ($this->isPositionalArguments($requestParams)) {
+            return $requestParams;
         }
 
-        return $this->getNamedArguments($request_params, $method_params);
+        return $this->getNamedArguments($requestParams, $methodParams);
     }
 
     /**

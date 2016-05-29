@@ -2,11 +2,20 @@
 
 use JsonRPC\Exception\AccessDeniedException;
 use JsonRPC\Exception\AuthenticationFailureException;
+use JsonRPC\MiddlewareInterface;
 use JsonRPC\Response\HeaderMockTest;
 use JsonRPC\Server;
 
 require_once __DIR__.'/../vendor/autoload.php';
 require_once __DIR__.'/Response/HeaderMockTest.php';
+
+class DummyMiddleware implements MiddlewareInterface
+{
+    public function execute($username, $password, $procedureName)
+    {
+        throw new AuthenticationFailureException('Bad user');
+    }
+}
 
 class ServerTest extends HeaderMockTest
 {
@@ -65,8 +74,6 @@ class ServerTest extends HeaderMockTest
         $this->assertEquals('{"jsonrpc":"2.0","result":7,"id":"1"}', $server->execute());
     }
 
-
-
     public function testExecuteRequestParserOverride()
     {
         $requestParser = $this->getMockBuilder('JsonRPC\Request\RequestParser')
@@ -74,6 +81,7 @@ class ServerTest extends HeaderMockTest
 
         $requestParser->method('withPayload')->willReturn($requestParser);
         $requestParser->method('withProcedureHandler')->willReturn($requestParser);
+        $requestParser->method('withMiddlewareHandler')->willReturn($requestParser);
 
         $server = new Server($this->payload, array(), null, $requestParser);
 
@@ -90,6 +98,7 @@ class ServerTest extends HeaderMockTest
 
         $batchRequestParser->method('withPayload')->willReturn($batchRequestParser);
         $batchRequestParser->method('withProcedureHandler')->willReturn($batchRequestParser);
+        $batchRequestParser->method('withMiddlewareHandler')->willReturn($batchRequestParser);
 
         $server = new Server('["...", "..."]', array(), null, null, $batchRequestParser);
 
@@ -121,9 +130,7 @@ class ServerTest extends HeaderMockTest
 
         $batchRequestParser->method('withPayload')->willReturn($batchRequestParser);
         $batchRequestParser->method('withProcedureHandler')->willReturn($batchRequestParser);
-
-        $procedureHandler->method('withUsername')->willReturn($procedureHandler);
-        $procedureHandler->method('withPassword')->willReturn($procedureHandler);
+        $batchRequestParser->method('withMiddlewareHandler')->willReturn($batchRequestParser);
 
         $server = new Server('["...", "..."]', array(), null, null, $batchRequestParser, $procedureHandler);
 
@@ -162,6 +169,27 @@ class ServerTest extends HeaderMockTest
         $server = new Server($this->payload);
         $server->getProcedureHandler()->withCallback('sum', function($a, $b, $c) {
             throw new AuthenticationFailureException();
+        });
+
+        self::$functions
+            ->expects($this->at(0))
+            ->method('header')
+            ->with('HTTP/1.0 401 Unauthorized');
+
+        self::$functions
+            ->expects($this->at(1))
+            ->method('header')
+            ->with('Content-Type: application/json');
+
+        $this->assertEquals('{"jsonrpc":"2.0","error":{"code":401,"message":"Unauthorized"},"id":null}', $server->execute());
+    }
+
+    public function testWhenMiddlewareRaiseUnauthorizedException()
+    {
+        $server = new Server($this->payload);
+        $server->getMiddlewareHandler()->withMiddleware(new DummyMiddleware());
+        $server->getProcedureHandler()->withCallback('sum', function($a, $b) {
+            return $a + $b;
         });
 
         self::$functions

@@ -24,6 +24,7 @@ class BatchRequestParser extends RequestParser
             $responses[] = RequestParser::create()
                 ->withPayload($payload)
                 ->withProcedureHandler($this->procedureHandler)
+                ->withMiddlewareHandler($this->middlewareHandler)
                 ->parse();
         }
 

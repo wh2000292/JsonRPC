@@ -4,16 +4,15 @@ JsonRPC PHP Client and Server
 A simple Json-RPC client/server that just works.
 
 [![Scrutinizer Code Quality](https://scrutinizer-ci.com/g/fguillot/JsonRPC/badges/quality-score.png?b=master)](https://scrutinizer-ci.com/g/fguillot/JsonRPC/?branch=master)
-
 [![Build Status](https://travis-ci.org/fguillot/JsonRPC.svg?branch=master)](https://travis-ci.org/fguillot/JsonRPC)
 
 Features
 --------
 
-- JSON-RPC 2.0 protocol only
+- JSON-RPC 2.0 only
 - The server support batch requests and notifications
 - Authentication and IP based client restrictions
-- Minimalist: there is only 2 files
+- Custom Middleware
 - Fully unit tested
 - Requirements: PHP >= 5.3.4
 - License: MIT
@@ -45,7 +44,6 @@ use JsonRPC\Server;
 $server = new Server;
 
 // Procedures registration
-
 $server->register('addition', function ($a, $b) {
     return $a + $b;
 });
@@ -92,46 +90,43 @@ echo $server->execute();
 
 ```
 
-Before callback:
+Server Middleware:
 
-Before each procedure execution, a custom method can be called.
-
-This method receive the following arguments: `$username, $password, $class, $method`.
+Middleware might be used to authenticate and authorize the client.
+They are executed before each procedure.
 
 ```php
 <?php
 
 use JsonRPC\Server;
-use JsonRPC\AuthenticationFailure;
+use JsonRPC\MiddlewareInterface;
+use JsonRPC\Exception\AuthenticationFailureException;
 
 class Api
 {
-    public function beforeProcedure($username, $password, $class, $method)
+    public function doSomething($arg1, $arg2 = 3)
     {
-        if ($login_condition_failed) {
-            throw new AuthenticationFailure('Wrong credentials!');
-        }
-    }
-
-    public function addition($a, $b)
-    {
-        return $a + $b;
+        return $arg1 + $arg2;
     }
 }
 
-$server = new Server;
-$server->authentication(['myuser' => 'mypassword']);
+class MyMiddleware implements MiddlewareInterface
+{
+    public function execute($username, $password, $procedureName)
+    {
+        if ($username !== 'foobar') {
+            throw new AuthenticationFailureException('Wrong credentials!');
+        }
+    }
+}
 
-// Register the before callback
-$server->before('beforeProcedure');
-
+$server = new Server();
+$server->getMiddlewareHanlder()->withMiddleware(new MyMiddleware());
 $server->attach(new Api);
 echo $server->execute();
-
 ```
 
-You can use this method to implements a custom authentication system or anything else.
-If you would like to reject the authentication, you can raise the exception `JsonRPC\Exception\AuthenticationFailureException`.
+You can raise a `AuthenticationFailureException` when the API credentials are wrong or a `AccessDeniedException` when the user is not allowed to access to the procedure.
 
 ### Client
 

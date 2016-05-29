@@ -6,6 +6,7 @@ use Exception;
 use JsonRPC\Exception\AccessDeniedException;
 use JsonRPC\Exception\AuthenticationFailureException;
 use JsonRPC\Exception\InvalidJsonRpcFormatException;
+use JsonRPC\MiddlewareHandler;
 use JsonRPC\ProcedureHandler;
 use JsonRPC\Response\ResponseBuilder;
 use JsonRPC\Validator\JsonFormatValidator;
@@ -34,6 +35,14 @@ class RequestParser
      * @var ProcedureHandler
      */
     protected $procedureHandler;
+
+    /**
+     * MiddlewareHandler
+     *
+     * @access protected
+     * @var MiddlewareHandler
+     */
+    protected $middlewareHandler;
 
     /**
      * Get new object instance
@@ -74,6 +83,19 @@ class RequestParser
     }
 
     /**
+     * Set middleware handler
+     *
+     * @access public
+     * @param  MiddlewareHandler $middlewareHandler
+     * @return $this
+     */
+    public function withMiddlewareHandler(MiddlewareHandler $middlewareHandler)
+    {
+        $this->middlewareHandler = $middlewareHandler;
+        return $this;
+    }
+
+    /**
      * Parse incoming request
      *
      * @access public
@@ -87,6 +109,10 @@ class RequestParser
 
             JsonFormatValidator::validate($this->payload);
             RpcFormatValidator::validate($this->payload);
+
+            $this->middlewareHandler
+                ->withProcedure($this->payload['method'])
+                ->execute();
 
             $result = $this->procedureHandler->executeProcedure(
                 $this->payload['method'],

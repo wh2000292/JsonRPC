@@ -84,6 +84,14 @@ class Server
     protected $procedureHandler;
 
     /**
+     * MiddlewareHandler object
+     *
+     * @access protected
+     * @var MiddlewareHandler
+     */
+    protected $middlewareHandler;
+
+    /**
      * Response builder
      *
      * @access protected
@@ -112,12 +120,13 @@ class Server
      * Constructor
      *
      * @access public
-     * @param  string             $request
-     * @param  array              $server
-     * @param  ResponseBuilder    $responseBuilder
-     * @param  RequestParser      $requestParser
-     * @param  BatchRequestParser $batchRequestParser
-     * @param  ProcedureHandler   $procedureHandler
+     * @param  string              $request
+     * @param  array               $server
+     * @param  ResponseBuilder     $responseBuilder
+     * @param  RequestParser       $requestParser
+     * @param  BatchRequestParser  $batchRequestParser
+     * @param  ProcedureHandler    $procedureHandler
+     * @param  MiddlewareHandler   $middlewareHandler
      */
     public function __construct(
         $request = '',
@@ -125,7 +134,8 @@ class Server
         ResponseBuilder $responseBuilder = null,
         RequestParser $requestParser = null,
         BatchRequestParser $batchRequestParser = null,
-        ProcedureHandler $procedureHandler = null
+        ProcedureHandler $procedureHandler = null,
+        MiddlewareHandler $middlewareHandler = null
     ) {
         if ($request !== '') {
             $this->payload = json_decode($request, true);
@@ -133,12 +143,12 @@ class Server
             $this->payload = json_decode(file_get_contents('php://input'), true);
         }
 
+        $this->serverVariable = $server ?: $_SERVER;
         $this->responseBuilder = $responseBuilder ?: ResponseBuilder::create();
         $this->requestParser = $requestParser ?: RequestParser::create();
         $this->batchRequestParser = $batchRequestParser ?: BatchRequestParser::create();
-
-        $this->serverVariable = $server ?: $_SERVER;
         $this->procedureHandler = $procedureHandler ?: new ProcedureHandler();
+        $this->middlewareHandler = $middlewareHandler ?: new MiddlewareHandler();
     }
 
     /**
@@ -171,6 +181,17 @@ class Server
     public function getProcedureHandler()
     {
         return $this->procedureHandler;
+    }
+
+    /**
+     * Get MiddlewareHandler
+     *
+     * @access public
+     * @return MiddlewareHandler
+     */
+    public function getMiddlewareHandler()
+    {
+        return $this->middlewareHandler;
     }
 
     /**
@@ -278,19 +299,6 @@ class Server
     }
 
     /**
-     * Attach a method that will be called before the procedure
-     *
-     * @access public
-     * @param  string  $before
-     * @return Server
-     */
-    public function before($before)
-    {
-        $this->procedureHandler->withBeforeMethod($before);
-        return $this;
-    }
-
-    /**
      * Parse incoming requests
      *
      * @access public
@@ -299,13 +307,14 @@ class Server
     public function execute()
     {
         try {
-            $this->procedureHandler
-                ->withUsername($this->getUsername())
-                ->withPassword($this->getPassword());
-
             JsonFormatValidator::validate($this->payload);
             HostValidator::validate($this->hosts, $this->getServerVariable('REMOTE_ADDR'));
             UserValidator::validate($this->users, $this->getUsername(), $this->getPassword());
+
+            $this->middlewareHandler
+                ->withUsername($this->getUsername())
+                ->withPassword($this->getPassword())
+            ;
 
             $response = $this->parseRequest();
 
@@ -329,12 +338,14 @@ class Server
             return $this->batchRequestParser
                 ->withPayload($this->payload)
                 ->withProcedureHandler($this->procedureHandler)
+                ->withMiddlewareHandler($this->middlewareHandler)
                 ->parse();
         }
 
         return $this->requestParser
             ->withPayload($this->payload)
             ->withProcedureHandler($this->procedureHandler)
+            ->withMiddlewareHandler($this->middlewareHandler)
             ->parse();
     }
 
