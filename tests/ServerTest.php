@@ -2,12 +2,18 @@
 
 use JsonRPC\Exception\AccessDeniedException;
 use JsonRPC\Exception\AuthenticationFailureException;
+use JsonRPC\Exception\ResponseException;
 use JsonRPC\MiddlewareInterface;
 use JsonRPC\Response\HeaderMockTest;
 use JsonRPC\Server;
 
 require_once __DIR__.'/../vendor/autoload.php';
 require_once __DIR__.'/Response/HeaderMockTest.php';
+
+class MyException extends Exception
+{
+
+}
 
 class DummyMiddleware implements MiddlewareInterface
 {
@@ -82,6 +88,7 @@ class ServerTest extends HeaderMockTest
         $requestParser->method('withPayload')->willReturn($requestParser);
         $requestParser->method('withProcedureHandler')->willReturn($requestParser);
         $requestParser->method('withMiddlewareHandler')->willReturn($requestParser);
+        $requestParser->method('withLocalException')->willReturn($requestParser);
 
         $server = new Server($this->payload, array(), null, $requestParser);
 
@@ -99,6 +106,7 @@ class ServerTest extends HeaderMockTest
         $batchRequestParser->method('withPayload')->willReturn($batchRequestParser);
         $batchRequestParser->method('withProcedureHandler')->willReturn($batchRequestParser);
         $batchRequestParser->method('withMiddlewareHandler')->willReturn($batchRequestParser);
+        $batchRequestParser->method('withLocalException')->willReturn($batchRequestParser);
 
         $server = new Server('["...", "..."]', array(), null, null, $batchRequestParser);
 
@@ -131,6 +139,7 @@ class ServerTest extends HeaderMockTest
         $batchRequestParser->method('withPayload')->willReturn($batchRequestParser);
         $batchRequestParser->method('withProcedureHandler')->willReturn($batchRequestParser);
         $batchRequestParser->method('withMiddlewareHandler')->willReturn($batchRequestParser);
+        $batchRequestParser->method('withLocalException')->willReturn($batchRequestParser);
 
         $server = new Server('["...", "..."]', array(), null, null, $batchRequestParser, $procedureHandler);
 
@@ -203,5 +212,47 @@ class ServerTest extends HeaderMockTest
             ->with('Content-Type: application/json');
 
         $this->assertEquals('{"jsonrpc":"2.0","error":{"code":401,"message":"Unauthorized"},"id":null}', $server->execute());
+    }
+
+    public function testFilterRelayExceptions()
+    {
+        $server = new Server($this->payload);
+        $server->withLocalException('MyException');
+        $server->getProcedureHandler()->withCallback('sum', function($a, $b, $c) {
+            throw new MyException('test');
+        });
+
+        $this->setExpectedException('MyException');
+        $server->execute();
+    }
+
+    public function testCustomExceptionAreRelayedToClient()
+    {
+        $server = new Server($this->payload);
+        $server->getProcedureHandler()->withCallback('sum', function($a, $b, $c) {
+            throw new MyException('test');
+        });
+
+        self::$functions
+            ->expects($this->once())
+            ->method('header')
+            ->with('Content-Type: application/json');
+
+        $this->assertEquals('{"jsonrpc":"2.0","error":{"code":0,"message":"test"},"id":"1"}', $server->execute());
+    }
+
+    public function testCustomResponseException()
+    {
+        $server = new Server($this->payload);
+        $server->getProcedureHandler()->withCallback('sum', function($a, $b, $c) {
+            throw new ResponseException('test', 123, null, 'more info');
+        });
+
+        self::$functions
+            ->expects($this->once())
+            ->method('header')
+            ->with('Content-Type: application/json');
+
+        $this->assertEquals('{"jsonrpc":"2.0","error":{"code":123,"message":"test","data":"more info"},"id":"1"}', $server->execute());
     }
 }

@@ -36,12 +36,12 @@ class Server
     protected $payload = array();
 
     /**
-     * List of exception classes that should be relayed to client
+     * List of exceptions that should not be relayed to the client
      *
      * @access protected
-     * @var array
+     * @var array()
      */
-    protected $exceptions = array();
+    protected $localExceptions = array();
 
     /**
      * Username
@@ -156,7 +156,7 @@ class Server
      *
      * @access public
      * @param  string   $header   Header name
-     * @return Server
+     * @return $this
      */
     public function setAuthenticationHeader($header)
     {
@@ -221,7 +221,7 @@ class Server
      *
      * @access public
      * @param  array   $hosts   List of hosts
-     * @return Server
+     * @return $this
      */
     public function allowHosts(array $hosts)
     {
@@ -234,7 +234,7 @@ class Server
      *
      * @access public
      * @param  array   $users   Dictionary of username/password
-     * @return Server
+     * @return $this
      */
     public function authentication(array $users)
     {
@@ -246,9 +246,10 @@ class Server
      * Register a new procedure
      *
      * @access public
+     * @deprecated Use $server->getProcedureHandler()->withCallback($procedure, $callback)
      * @param  string   $procedure       Procedure name
      * @param  closure  $callback        Callback
-     * @return Server
+     * @return $this
      */
     public function register($procedure, Closure $callback)
     {
@@ -260,10 +261,11 @@ class Server
      * Bind a procedure to a class
      *
      * @access public
+     * @deprecated Use $server->getProcedureHandler()->withClassAndMethod($procedure, $class, $method);
      * @param  string   $procedure    Procedure name
      * @param  mixed    $class        Class name or instance
      * @param  string   $method       Procedure name
-     * @return Server
+     * @return $this
      */
     public function bind($procedure, $class, $method = '')
     {
@@ -275,8 +277,9 @@ class Server
      * Bind a class instance
      *
      * @access public
+     * @deprecated Use $server->getProcedureHandler()->withObject($instance);
      * @param  mixed   $instance    Instance name
-     * @return Server
+     * @return $this
      */
     public function attach($instance)
     {
@@ -285,16 +288,15 @@ class Server
     }
 
     /**
-     * Bind an exception
-     * If this exception occurs it is relayed to the client as JSON-RPC error
+     * Exception classes that should not be relayed to the client
      *
      * @access public
-     * @param  mixed   $exception    Exception class. Defaults to all.
-     * @return Server
+     * @param  Exception|string $exception
+     * @return $this
      */
-    public function attachException($exception = 'Exception')
+    public function withLocalException($exception)
     {
-        $this->exceptions[] = $exception;
+        $this->localExceptions[] = $exception;
         return $this;
     }
 
@@ -319,11 +321,30 @@ class Server
             $response = $this->parseRequest();
 
         } catch (Exception $e) {
-            $response = $this->responseBuilder->withException($e)->build();
+            $response = $this->handleExceptions($e);
         }
 
         $this->responseBuilder->sendHeaders();
         return $response;
+    }
+
+    /**
+     * Handle exceptions
+     * 
+     * @access protected
+     * @param  Exception $e
+     * @return string
+     * @throws Exception
+     */
+    protected function handleExceptions(Exception $e)
+    {
+        foreach ($this->localExceptions as $exception) {
+            if ($e instanceof $exception) {
+                throw $e;
+            }
+        }
+
+        return $this->responseBuilder->withException($e)->build();
     }
 
     /**
@@ -339,6 +360,7 @@ class Server
                 ->withPayload($this->payload)
                 ->withProcedureHandler($this->procedureHandler)
                 ->withMiddlewareHandler($this->middlewareHandler)
+                ->withLocalException($this->localExceptions)
                 ->parse();
         }
 
@@ -346,6 +368,7 @@ class Server
             ->withPayload($this->payload)
             ->withProcedureHandler($this->procedureHandler)
             ->withMiddlewareHandler($this->middlewareHandler)
+            ->withLocalException($this->localExceptions)
             ->parse();
     }
 

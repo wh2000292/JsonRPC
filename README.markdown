@@ -41,20 +41,17 @@ Callback binding:
 
 use JsonRPC\Server;
 
-$server = new Server;
+$server = new Server();
+$server->getProcedureHandler()
+    ->withCallback('addition', function ($a, $b) {
+        return $a + $b;
+    })
+    ->withCallback('random', function ($start, $end) {
+        return mt_rand($start, $end);
+    })
+;
 
-// Procedures registration
-$server->register('addition', function ($a, $b) {
-    return $a + $b;
-});
-
-$server->register('random', function ($start, $end) {
-    return mt_rand($start, $end);
-});
-
-// Return the response to the client
 echo $server->execute();
-
 ```
 
 Class/Method binding:
@@ -72,19 +69,20 @@ class Api
     }
 }
 
-$server = new Server;
+$server = new Server();
+$procedureHandler = $server->getProcedureHandler();
 
 // Bind the method Api::doSomething() to the procedure myProcedure
-$server->bind('myProcedure', 'Api', 'doSomething');
+$procedureHandler->withClassAndMethod('myProcedure', 'Api', 'doSomething');
 
 // Use a class instance instead of the class name
-$server->bind('mySecondProcedure', new Api, 'doSomething');
+$procedureHandler->withClassAndMethod('mySecondProcedure', new Api, 'doSomething');
 
 // The procedure and the method are the same
-$server->bind('doSomething', 'Api');
+$procedureHandler->withClassAndMethod('doSomething', 'Api');
 
-// Attach the class, client will be able to call directly Api::doSomething()
-$server->attach(new Api);
+// Attach the class, the client will be able to call directly Api::doSomething()
+$procedureHandler->withObject(new Api());
 
 echo $server->execute();
 
@@ -122,7 +120,7 @@ class MyMiddleware implements MiddlewareInterface
 
 $server = new Server();
 $server->getMiddlewareHanlder()->withMiddleware(new MyMiddleware());
-$server->attach(new Api);
+$server->getProcedureHandler()->withObject(new Api());
 echo $server->execute();
 ```
 
@@ -208,7 +206,7 @@ executing the batch request.
 
 ### Enable client debugging
 
-You can enable the debug to see the JSON request and response:
+You can enable the debug mode to see the JSON request and response:
 
 ```php
 <?php
@@ -305,7 +303,7 @@ Using an alternative authentication header:
 
 use JsonRPC\Server;
 
-$server = new Server;
+$server = new Server();
 $server->setAuthenticationHeader('X-Authentication');
 $server->authentication(['myusername' => 'mypassword']);
 ```
@@ -313,32 +311,29 @@ $server->authentication(['myusername' => 'mypassword']);
 The example above will use the HTTP header `X-Authentication` instead of the standard `Authorization: Basic [BASE64_CREDENTIALS]`.
 The username/password values need be encoded in base64: `base64_encode('username:password')`.
 
-### Exceptions
+### Local Exceptions
 
-If you want to send an error to the client you can throw an exception.
-You should configure which exceptions should be relayed to the client first:
+By default, the server will relay all exceptions to the client.
+If you would like to relay only some of them, use the method `Server::withLocalException($exception)`:
 
 ```php
 <?php
 
 use JsonRPC\Server;
-class MyException extends RuntimeException {};
+class MyException1 extends Exception {};
+class MyException2 extends Exception {};
 
-$server = new Server;
+$server = new Server();
 
-// Exceptions that should be relayed to the client, if they occur
-$server->attachException('MyException');
+// Exceptions that should NOT be relayed to the client, if they occurs
+$server
+    ->withLocalException('MyException1')
+    ->withLocalException('MyException2')
+;
 
 [...]
 
-// Return the response to the client
 echo $server->execute();
-```
-
-Then you can throw that exception inside your procedure:
-
-```
-throw new MyException("An error occurred", 123);
 ```
 
 ### Callback before client request

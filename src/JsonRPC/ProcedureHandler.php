@@ -46,7 +46,7 @@ class ProcedureHandler
      * @access public
      * @param  string   $procedure       Procedure name
      * @param  closure  $callback        Callback
-     * @return Server
+     * @return $this
      */
     public function withCallback($procedure, Closure $callback)
     {
@@ -61,7 +61,7 @@ class ProcedureHandler
      * @param  string   $procedure    Procedure name
      * @param  mixed    $class        Class name or instance
      * @param  string   $method       Procedure name
-     * @return Server
+     * @return $this
      */
     public function withClassAndMethod($procedure, $class, $method = '')
     {
@@ -78,7 +78,7 @@ class ProcedureHandler
      *
      * @access public
      * @param  mixed   $instance
-     * @return Server
+     * @return $this
      */
     public function withObject($instance)
     {
@@ -202,24 +202,22 @@ class ProcedureHandler
      * Get named arguments
      *
      * @access public
-     * @param  array    $request_params      Incoming arguments
-     * @param  array    $method_params       Procedure arguments
+     * @param  array $requestParams Incoming arguments
+     * @param  array $methodParams  Procedure arguments
      * @return array
      */
-    public function getNamedArguments(array $request_params, array $method_params)
+    public function getNamedArguments(array $requestParams, array $methodParams)
     {
         $params = array();
 
-        foreach ($method_params as $p) {
+        foreach ($methodParams as $p) {
             $name = $p->getName();
 
-            if (isset($request_params[$name])) {
-                $params[$name] = $request_params[$name];
-            }
-            else if ($p->isDefaultValueAvailable()) {
+            if (isset($requestParams[$name])) {
+                $params[$name] = $requestParams[$name];
+            } elseif ($p->isDefaultValueAvailable()) {
                 $params[$name] = $p->getDefaultValue();
-            }
-            else {
+            } else {
                 throw new InvalidArgumentException('Missing argument: '.$name);
             }
         }
