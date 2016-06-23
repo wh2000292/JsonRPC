@@ -37,4 +37,17 @@ class RequestBuilderTest extends PHPUnit_Framework_TestCase
         $result = json_decode($payload, true);
         $this->assertNotNull($result['id']);
     }
+
+    public function testBuilderWithAdditionalRequestAttributes()
+    {
+        $payload = RequestBuilder::create()
+            ->withProcedure('foobar')
+            ->withParams(array(1, 2, 3))
+            ->withRequestAttributes(array("some-attr" => 42))
+            ->build();
+
+        $result = json_decode($payload, true);
+        $this->assertNotNull($result['some-attr']);
+    }
+
 }
