@@ -155,8 +155,9 @@ class Client
      * Execute a procedure
      *
      * @access public
-     * @param  string   $procedure   Procedure name
-     * @param  array    $params      Procedure arguments
+     * @param  string $procedure Procedure name
+     * @param  array  $params    Procedure arguments
+     * @param  array  $reqattrs
      * @return mixed
      */
     public function execute($procedure, array $params = array(), array $reqattrs = array())
@@ -165,7 +166,7 @@ class Client
             ->withProcedure($procedure)
             ->withParams($params)
             ->withRequestAttributes($reqattrs)
-            ->build($reqattrs);
+            ->build();
 
         if ($this->isBatch) {
             $this->batch[] = $payload;
