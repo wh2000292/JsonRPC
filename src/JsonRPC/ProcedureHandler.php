@@ -41,6 +41,14 @@ class ProcedureHandler
     protected $instances = array();
 
     /**
+     * Before method name to call
+     *
+     * @access protected
+     * @var string
+     */
+    protected $beforeMethodName = '';
+
+    /**
      * Register a new procedure
      *
      * @access public
@@ -83,6 +91,19 @@ class ProcedureHandler
     public function withObject($instance)
     {
         $this->instances[] = $instance;
+        return $this;
+    }
+
+    /**
+     * Set a before method to call
+     *
+     * @access public
+     * @param  string $methodName
+     * @return $this
+     */
+    public function withBeforeMethod($methodName)
+    {
+        $this->beforeMethodName = $methodName;
         return $this;
     }
 
@@ -147,6 +168,8 @@ class ProcedureHandler
         $instance = is_string($class) ? new $class : $class;
         $reflection = new ReflectionMethod($class, $method);
 
+        $this->executeBeforeMethod($instance, $method);
+
         $arguments = $this->getArguments(
             $params,
             $reflection->getParameters(),
@@ -155,6 +178,20 @@ class ProcedureHandler
         );
 
         return $reflection->invokeArgs($instance, $arguments);
+    }
+
+    /**
+     * Execute before method if defined
+     *
+     * @access public
+     * @param  mixed  $object
+     * @param  string $method
+     */
+    public function executeBeforeMethod($object, $method)
+    {
+        if ($this->beforeMethodName !== '' && method_exists($object, $this->beforeMethodName)) {
+            call_user_func_array(array($object, $this->beforeMethodName), array($method));
+        }
     }
 
     /**

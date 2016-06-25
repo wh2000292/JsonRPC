@@ -20,121 +20,134 @@ class B
     }
 }
 
+class ClassWithBeforeMethod
+{
+    private $foobar = '';
+
+    public function before($procedure)
+    {
+        $this->foobar = $procedure;
+    }
+
+    public function myProcedure()
+    {
+        return $this->foobar;
+    }
+}
+
 class ProcedureHandlerTest extends PHPUnit_Framework_TestCase
 {
-    /**
-     * @expectedException BadFunctionCallException
-     */
     public function testProcedureNotFound()
     {
-        $server = new ProcedureHandler;
-        $server->executeProcedure('a');
+        $this->setExpectedException('BadFunctionCallException');
+        $handler = new ProcedureHandler;
+        $handler->executeProcedure('a');
     }
 
-    /**
-     * @expectedException BadFunctionCallException
-     */
     public function testCallbackNotFound()
     {
-        $server = new ProcedureHandler;
-        $server->withCallback('b', function() {});
-        $server->executeProcedure('a');
+        $this->setExpectedException('BadFunctionCallException');
+        $handler = new ProcedureHandler;
+        $handler->withCallback('b', function() {});
+        $handler->executeProcedure('a');
     }
 
-    /**
-     * @expectedException BadFunctionCallException
-     */
     public function testClassNotFound()
     {
-        $server = new ProcedureHandler;
-        $server->withClassAndMethod('getAllTasks', 'c', 'getAll');
-        $server->executeProcedure('getAllTasks');
+        $this->setExpectedException('BadFunctionCallException');
+        $handler = new ProcedureHandler;
+        $handler->withClassAndMethod('getAllTasks', 'c', 'getAll');
+        $handler->executeProcedure('getAllTasks');
     }
 
-    /**
-     * @expectedException BadFunctionCallException
-     */
     public function testMethodNotFound()
     {
-        $server = new ProcedureHandler;
-        $server->withClassAndMethod('getAllTasks', 'A', 'getNothing');
-        $server->executeProcedure('getAllTasks');
+        $this->setExpectedException('BadFunctionCallException');
+        $handler = new ProcedureHandler;
+        $handler->withClassAndMethod('getAllTasks', 'A', 'getNothing');
+        $handler->executeProcedure('getAllTasks');
     }
 
     public function testIsPositionalArguments()
     {
-        $server = new ProcedureHandler;
-        $this->assertFalse($server->isPositionalArguments(
+        $handler = new ProcedureHandler;
+        $this->assertFalse($handler->isPositionalArguments(
             array('a' => 'b', 'c' => 'd')
         ));
 
-        $server = new ProcedureHandler;
-        $this->assertTrue($server->isPositionalArguments(
+        $handler = new ProcedureHandler;
+        $this->assertTrue($handler->isPositionalArguments(
             array('a', 'b', 'c')
         ));
     }
 
     public function testBindNamedArguments()
     {
-        $server = new ProcedureHandler;
-        $server->withClassAndMethod('getAllA', 'A', 'getAll');
-        $server->withClassAndMethod('getAllB', 'B', 'getAll');
-        $server->withClassAndMethod('getAllC', new B, 'getAll');
-        $this->assertEquals(6, $server->executeProcedure('getAllA', array('p2' => 4, 'p1' => -2)));
-        $this->assertEquals(10, $server->executeProcedure('getAllA', array('p2' => 4, 'p3' => 8, 'p1' => -2)));
-        $this->assertEquals(6, $server->executeProcedure('getAllB', array('p1' => 4)));
-        $this->assertEquals(5, $server->executeProcedure('getAllC', array('p1' => 3)));
+        $handler = new ProcedureHandler;
+        $handler->withClassAndMethod('getAllA', 'A', 'getAll');
+        $handler->withClassAndMethod('getAllB', 'B', 'getAll');
+        $handler->withClassAndMethod('getAllC', new B, 'getAll');
+        $this->assertEquals(6, $handler->executeProcedure('getAllA', array('p2' => 4, 'p1' => -2)));
+        $this->assertEquals(10, $handler->executeProcedure('getAllA', array('p2' => 4, 'p3' => 8, 'p1' => -2)));
+        $this->assertEquals(6, $handler->executeProcedure('getAllB', array('p1' => 4)));
+        $this->assertEquals(5, $handler->executeProcedure('getAllC', array('p1' => 3)));
     }
 
     public function testBindPositionalArguments()
     {
-        $server = new ProcedureHandler;
-        $server->withClassAndMethod('getAllA', 'A', 'getAll');
-        $server->withClassAndMethod('getAllB', 'B', 'getAll');
-        $this->assertEquals(6, $server->executeProcedure('getAllA', array(4, -2)));
-        $this->assertEquals(2, $server->executeProcedure('getAllA', array(4, 0, -2)));
-        $this->assertEquals(4, $server->executeProcedure('getAllB', array(2)));
+        $handler = new ProcedureHandler;
+        $handler->withClassAndMethod('getAllA', 'A', 'getAll');
+        $handler->withClassAndMethod('getAllB', 'B', 'getAll');
+        $this->assertEquals(6, $handler->executeProcedure('getAllA', array(4, -2)));
+        $this->assertEquals(2, $handler->executeProcedure('getAllA', array(4, 0, -2)));
+        $this->assertEquals(4, $handler->executeProcedure('getAllB', array(2)));
     }
 
     public function testRegisterNamedArguments()
     {
-        $server = new ProcedureHandler;
-        $server->withCallback('getAllA', function($p1, $p2, $p3 = 4) {
+        $handler = new ProcedureHandler;
+        $handler->withCallback('getAllA', function($p1, $p2, $p3 = 4) {
             return $p1 + $p2 + $p3;
         });
 
-        $this->assertEquals(6, $server->executeProcedure('getAllA', array('p2' => 4, 'p1' => -2)));
-        $this->assertEquals(10, $server->executeProcedure('getAllA', array('p2' => 4, 'p3' => 8, 'p1' => -2)));
+        $this->assertEquals(6, $handler->executeProcedure('getAllA', array('p2' => 4, 'p1' => -2)));
+        $this->assertEquals(10, $handler->executeProcedure('getAllA', array('p2' => 4, 'p3' => 8, 'p1' => -2)));
     }
 
     public function testRegisterPositionalArguments()
     {
-        $server = new ProcedureHandler;
-        $server->withCallback('getAllA', function($p1, $p2, $p3 = 4) {
+        $handler = new ProcedureHandler;
+        $handler->withCallback('getAllA', function($p1, $p2, $p3 = 4) {
             return $p1 + $p2 + $p3;
         });
 
-        $this->assertEquals(6, $server->executeProcedure('getAllA', array(4, -2)));
-        $this->assertEquals(2, $server->executeProcedure('getAllA', array(4, 0, -2)));
+        $this->assertEquals(6, $handler->executeProcedure('getAllA', array(4, -2)));
+        $this->assertEquals(2, $handler->executeProcedure('getAllA', array(4, 0, -2)));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testTooManyArguments()
     {
-        $server = new ProcedureHandler;
-        $server->withClassAndMethod('getAllC', new B, 'getAll');
-        $server->executeProcedure('getAllC', array('p1' => 3, 'p2' => 5));
+        $this->setExpectedException('InvalidArgumentException');
+
+        $handler = new ProcedureHandler;
+        $handler->withClassAndMethod('getAllC', new B, 'getAll');
+        $handler->executeProcedure('getAllC', array('p1' => 3, 'p2' => 5));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testNotEnoughArguments()
     {
-        $server = new ProcedureHandler;
-        $server->withClassAndMethod('getAllC', new B, 'getAll');
-        $server->executeProcedure('getAllC');
+        $this->setExpectedException('InvalidArgumentException');
+
+        $handler = new ProcedureHandler;
+        $handler->withClassAndMethod('getAllC', new B, 'getAll');
+        $handler->executeProcedure('getAllC');
+    }
+
+    public function testBeforeMethod()
+    {
+        $handler = new ProcedureHandler;
+        $handler->withObject(new ClassWithBeforeMethod);
+        $handler->withBeforeMethod('before');
+        $this->assertEquals('myProcedure', $handler->executeProcedure('myProcedure'));
     }
 }
