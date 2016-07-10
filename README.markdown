@@ -119,7 +119,7 @@ class MyMiddleware implements MiddlewareInterface
 }
 
 $server = new Server();
-$server->getMiddlewareHanlder()->withMiddleware(new MyMiddleware());
+$server->getMiddlewareHandler()->withMiddleware(new MyMiddleware());
 $server->getProcedureHandler()->withObject(new Api());
 echo $server->execute();
 ```
