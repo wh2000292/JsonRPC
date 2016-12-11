@@ -212,7 +212,14 @@ class ResponseBuilder
      */
     public function build()
     {
-        $encodedResponse = json_encode($this->buildResponse());
+        $options = 0;
+        if (defined('JSON_UNESCAPED_SLASHES')) {
+            $options |= JSON_UNESCAPED_SLASHES;
+        }
+        if (defined('JSON_UNESCAPED_UNICODE')) {
+            $options |= JSON_UNESCAPED_UNICODE;
+        }
+        $encodedResponse = json_encode($this->buildResponse(), $options);
         JsonEncodingValidator::validate();
 
         return $encodedResponse;
