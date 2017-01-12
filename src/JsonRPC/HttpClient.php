@@ -275,6 +275,8 @@ class HttpClient
         $metadata = stream_get_meta_data($stream);
         $headers = $metadata['wrapper_data'];
         $response = json_decode(stream_get_contents($stream), true);
+        
+        fclose($stream);
 
         if ($this->debug) {
             error_log('==> Request: '.PHP_EOL.(is_string($payload) ? $payload : json_encode($payload, JSON_PRETTY_PRINT)));
