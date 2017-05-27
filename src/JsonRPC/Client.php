@@ -119,10 +119,6 @@ class Client
      */
     public function __call($method, array $params)
     {
-        if ($this->isNamedArguments && count($params) === 1 && is_array($params[0])) {
-            $params = $params[0];
-        }
-
         return $this->execute($method, $params);
     }
 
